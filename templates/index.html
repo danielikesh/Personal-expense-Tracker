@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>Expense Tracker</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Your Expense Tracker</h1>
+        <p>Hello, {{ current_user.username }}!</p>
+        <a href="/logout">Logout</a>
+        
+        <h2>Add Transaction</h2>
+        <form id="transaction-form">
+            <input type="number" name="amount" placeholder="Amount" required>
+            <input type="text" name="description" placeholder="Description" required>
+            <select name="type" required>
+                <option value="">Select Type</option>
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+            </select>
+            <button type="submit">Add Transaction</button>
+        </form>
+
+        <h2>Your Transactions</h2>
+        <div id="transactions"></div>
+    </div>
+
+    <script>
+        // Fetch transactions and display them
+        function fetchTransactions() {
+            fetch('/transactions')
+                .then(response => response.json())
+                .then(data => {
+                    const transactionsDiv = document.getElementById('transactions');
+                    transactionsDiv.innerHTML = '';  // Clear previous transactions
+                    data.forEach(transaction => {
+                        const transactionItem = document.createElement('div');
+                        transactionItem.innerText = `${transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}: $${transaction.amount} - ${transaction.description}`;
+                        transactionsDiv.appendChild(transactionItem);
+                    });
+                });
+        }
+
+        document.getElementById('transaction-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            const data = {
+                amount: parseFloat(formData.get('amount')),
+                description: formData.get('description'),
+                type: formData.get('type')
+            };
+
+            fetch('/transactions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    fetchTransactions();  // Refresh the transactions list
+                    this.reset();  // Clear the form
+                }
+            });
+        });
+
+        // Load transactions on page load
+        window.onload = fetchTransactions;
+    </script>
+</body>
+</html>
